@@ -1,4 +1,4 @@
-# WARPFIELD
+# WARPFIELD - one-day side-project
 
 A real-time **AR hand-tracking playground** built with Python. Point your webcam at your hands and watch live image/video panels warp and stretch between your fingertips — powered by MediaPipe, OpenCV, and a dark PyQt6 UI inspired by Vercel and Higgsfield.
 
