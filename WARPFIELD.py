@@ -596,6 +596,7 @@ class VideoProcessorThread(QThread):
         self._custom_images_path = {}
 
         self._quadrilaterals: list[list[tuple[int, int]]] = []
+        self._anchor_points: list[list[tuple[int, int]]] = []
         self._last_hand_count = -1
 
         self._mp_hands = mp.solutions.hands
@@ -711,6 +712,7 @@ class VideoProcessorThread(QThread):
 
     def _update_quadrilaterals(self, results, frame_w: int, frame_h: int) -> None:
         self._quadrilaterals = []
+        self._anchor_points = []
         handed = self._get_handed_landmarks(results)
 
         if "Left" in handed and "Right" in handed:
@@ -720,6 +722,7 @@ class VideoProcessorThread(QThread):
                     px = self._lm_to_px(handed[side.capitalize()].landmark[lid], frame_w, frame_h)
                     key = f"two_{q_idx}_{side}_{lid}"
                     pts.append(self._smooth_point(key, px))
+                self._anchor_points.append(pts.copy())  # Store original landmark positions
                 self._quadrilaterals.append(self._expand_quad(pts))
         elif len(handed) == 1:
             lm = next(iter(handed.values()))
@@ -729,6 +732,7 @@ class VideoProcessorThread(QThread):
                 px = self._lm_to_px(lm.landmark[lid], frame_w, frame_h)
                 key = f"single_{side}_{lid}"
                 pts.append(self._smooth_point(key, px))
+            self._anchor_points.append(pts.copy())  # Store original landmark positions
             self._quadrilaterals.append(self._expand_quad(pts))
 
     def _notify_hand_count(self, results) -> None:
@@ -937,12 +941,14 @@ class VideoProcessorThread(QThread):
 
             if show_anchors:
                 color = self.ANCHOR_COLORS[idx % len(self.ANCHOR_COLORS)]
-                for pt in quad:
-                    cx, cy = int(pt[0]), int(pt[1])
-                    # Clean square anchor markers instead of circles
-                    half = 5
-                    cv2.rectangle(frame, (cx - half, cy - half), (cx + half, cy + half), color, -1)
-                    cv2.rectangle(frame, (cx - half - 2, cy - half - 2), (cx + half + 2, cy + half + 2), (40, 40, 40), 1)
+                # Draw anchor points at original landmark positions, not expanded quadrilaterals
+                if idx < len(self._anchor_points):
+                    for pt in self._anchor_points[idx]:
+                        cx, cy = int(pt[0]), int(pt[1])
+                        # Clean square anchor markers instead of circles
+                        half = 5
+                        cv2.rectangle(frame, (cx - half, cy - half), (cx + half, cy + half), color, -1)
+                        cv2.rectangle(frame, (cx - half - 2, cy - half - 2), (cx + half + 2, cy + half + 2), (40, 40, 40), 1)
 
     @staticmethod
     def _load_or_create_placeholder(path: str) -> np.ndarray:
