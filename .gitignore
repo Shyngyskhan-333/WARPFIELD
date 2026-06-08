@@ -1,16 +1,13 @@
-# Virtual environment
+
 .venv/
 
-# Python cache
 __pycache__/
 *.pyc
 *.pyo
 
-# Auto-generated assets
-placeholder.jpg
 
-# Unrelated media
 *.webp
 
-# Git lock (never commit this)
 *.lock
+
+*.gif
